@@ -615,8 +615,8 @@ class TextEntryBox:
 
 if __name__ == "__main__":
     # Temporary
-    url, port = "192.168.137.1", SERVER_PORT
-    server = Client((url, port), "Tommy")
+    url, port = "192.168.56.1", SERVER_PORT
+    server = Client((url, port), "Alex")
     server.start()
     server.wait_till_success()
 

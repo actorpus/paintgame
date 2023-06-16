@@ -26,6 +26,10 @@ entryboxes = []
 important_keys = [K_RETURN, K_KP_ENTER, K_BACKSPACE]
 
 
+def string_pop(i, string):
+    return string[:i] + string[i+1:]
+
+
 def interpolate(a, b, i):
     return int((a[0] * i) + (b[0] * (1 - i))), int((a[1] * i) + (b[1] * (1 - i)))
 
@@ -582,8 +586,12 @@ class TextEntryBox:
     # To add arrow key navigation I could:
     # - Instead have each character on their own rendered surface, makes moving the cursor along the text much easier as i
     #   simply traverse the array to the index of the previous/next characters surface and blit the cursor in its new position [SIMPLE to implement, SLOW to run]
+
     # - Almost the same as the previous but only have 2 surfaces, one rendering to the LEFT of the cursor and one to the RIGHT (obviously wouldn't render anything
     #   extra if there was nothing on one of the sides) [MORE DIFFICULT to implement, FASTER to run]
+
+    # - Figure out some twisted way of using slicing to work my way around this and also somehow move the cursor around, its a monospace font so i can probably
+    #   hardcode that or something weird
 
     def __init__(self, renderer, vals, col=SLIGHTLY_DARKER_GRAY, on_enter=None, blur=False):
         # Private
@@ -616,7 +624,7 @@ class TextEntryBox:
         if event.key in important_keys:
             if self.__current_string != "":
                 if event.key == K_BACKSPACE:
-                    self.__current_string = self.__current_string[:-1]
+                    self.__current_string = self.__current_string.pop()
                 elif event.key == (K_RETURN or K_KP_ENTER):
                     print(
                         f" [ \033[35mTextBx\033[0m ] Sending String '{self.__display_string}' to function. "

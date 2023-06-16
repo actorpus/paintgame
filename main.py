@@ -609,7 +609,6 @@ class TextEntryBox:
             if self.__current_string != "":
                 if event.key == K_BACKSPACE:
                     self.__current_string = self.__current_string[:-1]
-                    self.__display_string = self.__current_string
                 elif event.key == (K_RETURN or K_KP_ENTER):
                     print(
                         f" [ \033[35mTextBx\033[0m ] Sending String '{self.__display_string}' to function. "
@@ -618,7 +617,7 @@ class TextEntryBox:
                     self.reset_strings()
         elif len(self.__current_string) <= 32:
             self.__current_string = self.__current_string + event.unicode
-            self.__display_string = self.__current_string
+        self.__display_string = self.__current_string
 
     def render(self):
         # Drawing surfaces and blinking cursor

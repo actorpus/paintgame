@@ -625,7 +625,11 @@ if __name__ == "__main__":
         render_me = Renderer(server)
 
         # Other class instantiations
-        new_words_box = TextEntryBox(render_me, (150, 900, 1000, 100))
+        guesses = TextEntryBox(
+            render_me,
+            (1575, 765, 325, render_me.font.get_height() + 10),
+            on_enter=server.send_message,
+        )
 
         render_me.render_loop()
     except Exception:

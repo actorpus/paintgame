@@ -32,11 +32,11 @@ def interpolate(a, b, i):
 
 def draw_line_interpolated_1(points, screen, rgb, line_width):
     true = (
-        (points[-1][0] - points[-2][0]) ** 2 + (points[-1][1] - points[-2][1]) ** 2
-    ) ** 0.5
+                   (points[-1][0] - points[-2][0]) ** 2 + (points[-1][1] - points[-2][1]) ** 2
+           ) ** 0.5
     projected = (
-        (points[-2][0] - points[-3][0]) ** 2 + (points[-2][1] - points[-3][1]) ** 2
-    ) ** 0.5
+                        (points[-2][0] - points[-3][0]) ** 2 + (points[-2][1] - points[-3][1]) ** 2
+                ) ** 0.5
     final = min(projected, true * 0.3)
 
     projection = (
@@ -245,8 +245,8 @@ class Renderer:
                         if not event.unicode:
                             continue
                         if box.writing and (
-                            (32 <= ord(event.unicode) <= 126)
-                            or (event.key in important_keys)
+                                (32 <= ord(event.unicode) <= 126)
+                                or (event.key in important_keys)
                         ):
                             box.update_string(event)
 
@@ -268,12 +268,12 @@ class Renderer:
                                 self.__last_draw_pos = mouse_pos
 
                             if (
-                                960 < mouse_pos[0] < 1060
-                                and 100 < mouse_pos[1] < 150
-                                and self.__skip_current_word.get_at(
-                                    (mouse_pos[0] - 960, mouse_pos[1] - 100)
-                                )
-                                == (*BLUE, 255)
+                                    960 < mouse_pos[0] < 1060
+                                    and 100 < mouse_pos[1] < 150
+                                    and self.__skip_current_word.get_at(
+                                (mouse_pos[0] - 960, mouse_pos[1] - 100)
+                            )
+                                    == (*BLUE, 255)
                             ):
                                 print("gimme my new word boi")
 
@@ -327,9 +327,9 @@ class Renderer:
     def _word_list_renderer_part(self, x, temppyyy, i):
         return self.font.render(
             self.server.chat_log[-1 - i][
-                len(self.server.chat_log[-1 - i])
-                - (x + 1) * temppyyy : len(self.server.chat_log[-1 - i])
-                - x * temppyyy
+            len(self.server.chat_log[-1 - i])
+            - (x + 1) * temppyyy: len(self.server.chat_log[-1 - i])
+                                  - x * temppyyy
             ],
             True,
             (111, 111, 111),
@@ -357,7 +357,7 @@ class Renderer:
                 break
             self.screen.blit(
                 self.font.render(
-                    self.server.chat_log[-1 - i][0 : temppyyy - 2],
+                    self.server.chat_log[-1 - i][0: temppyyy - 2],
                     True,
                     (111, 111, 111),
                 ),
@@ -554,10 +554,10 @@ class Renderer:
                 question = (item[0] + offset[0], item[1] + offset[1])
 
                 if (
-                    question[0] < 0
-                    or question[0] > 1919
-                    or question[1] < 0
-                    or question[1] > 1079
+                        question[0] < 0
+                        or question[0] > 1919
+                        or question[1] < 0
+                        or question[1] > 1079
                 ):
                     continue
 
@@ -579,38 +579,52 @@ class Renderer:
 
 
 class TextEntryBox:
-    def __init__(self, renderer, vals, col=SLIGHTLY_DARKER_GRAY, on_enter=None):
+    def __init__(self, renderer, vals, col=SLIGHTLY_DARKER_GRAY, on_enter=None, blur=False):
+        # Vars
         self.writing = False
-        self._current_string: str = ""
+        self.__current_string: str = ""
+        self.__display_string = self.__current_string
         self.renderer = renderer
         self.__on_enter = on_enter
+        self.__blur = blur
         entryboxes.append(self)
         self.col = col
         self.rect: pygame.rect.Rect = pygame.Rect(vals)
+        # Setup
         self.__box_surface = pygame.Surface((vals[2], vals[3]), pygame.SRCALPHA)
         self.__font: pygame.font.Font = renderer.font
         self.__cursor_surf = pygame.Surface((2, self.__font.get_height() - 4))
 
     def text_box_clicked(self):
+        # Click response
         self.writing = True
         self.col = GRAY
 
+    def reset_strings(self):
+        self.__current_string, self.__display_string = "", ""
+
     def update_string(self, event):
+        # Keyboard handler
         if event.key in important_keys:
-            if self._current_string != "":
+            if self.__current_string != "":
                 if event.key == K_BACKSPACE:
-                    self._current_string = self._current_string[:-1]
+                    self.__current_string = self.__current_string[:-1]
+                    self.__display_string = self.__current_string
                 elif event.key == (K_RETURN or K_KP_ENTER):
                     print(
-                        f" [ \033[35mTextBx\033[0m ] Sending String '{self._current_string}' to function."
+                        f" [ \033[35mTextBx\033[0m ] Sending String '{self.__display_string}' to function. "
                     )
-                    self.__on_enter(self._current_string)
-                    self._current_string = ""
-        elif len(self._current_string) <= 32:
-            self._current_string = self._current_string + event.unicode
+                    self.__on_enter(self.__current_string)
+                    self.reset_strings()
+        elif len(self.__current_string) <= 32:
+            self.__current_string = self.__current_string + event.unicode
+            self.__display_string = self.__current_string
 
     def render(self):
-        rendered_text = self.__font.render(self._current_string, True, BLACK)
+        # Drawing surfaces and blinking cursor
+        if self.__blur:
+            self.__display_string = "".join("*" * len(self.__current_string))
+        rendered_text = self.__font.render(self.__display_string, True, BLACK)
         text_rect = rendered_text.get_rect()
 
         if (time.time() % 1 > 0.5) and self.writing:
@@ -644,8 +658,8 @@ class TextEntryBox:
 
 if __name__ == "__main__":
     # Temporary
-    url, port = "192.168.56.1", SERVER_PORT
-    server = Client((url, port), "Alex")
+    url, port = "192.168.137.1", SERVER_PORT
+    server = Client((url, port), "Tommy")
     server.start()
     server.wait_till_success()
 
@@ -658,6 +672,12 @@ if __name__ == "__main__":
             render_me,
             (1575, 765, 325, render_me.font.get_height() + 10),
             on_enter=server.send_message,
+        )
+        password_box = TextEntryBox(
+            render_me,
+            (1575, 765+render_me.font.get_height() + 20, 325, render_me.font.get_height() + 10),
+            on_enter=server.send_message,
+            blur=True
         )
 
         render_me.render_loop()

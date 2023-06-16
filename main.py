@@ -622,8 +622,9 @@ class TextEntryBox:
         self.writing = True
         self.col = GRAY
 
-    def reset_strings(self):
+    def reset_vars(self):
         self.__current_string, self.__display_string = "", ""
+        self.__pointer = -1
 
     def update_string(self, event):
         # Keyboard handler
@@ -634,7 +635,7 @@ class TextEntryBox:
                 elif event.key == (K_RETURN or K_KP_ENTER):
                     print(f" [ \033[35mTextBx\033[0m ] Sending String '{self.__display_string}' to function. ")
                     self.__on_enter(self.__current_string)
-                    self.reset_strings()
+                    self.reset_vars()
                 elif event.key == K_LEFT:
                     self.__pointer -= 1
                     print("pressed left")

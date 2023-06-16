@@ -11,7 +11,11 @@ import math
 
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
-GRAY, SLIGHTLY_DARKER_GRAY = (200, 200, 200), (210, 210, 210)
+GRAY, SLIGHTLY_DARKER_GRAY, SLIGHTLY_DARKER_DARKER_GRAY = (
+    (200, 200, 200),
+    (190, 190, 190),
+    (180, 180, 180),
+)
 BLACK = (0, 0, 0)
 SERVER_PORT = 16324
 INTERPOLATE_STEP = 20
@@ -198,17 +202,24 @@ class Renderer:
         self.__pen_size = 5
         self.__current_RGB = (0, 0, 0)
         self.__last_draw_pos = (0, 0)
-        self.__canvas = pygame.Surface((1910, 1080))
+        self.__canvas = pygame.Surface((1920, 1080))
         self.__canvas.fill(GRAY)
-        self.__clock = pygame.time.Clock()
+        self.clock = pygame.time.Clock()
         self.__options_menu_open = False
         self.__settings_pos = (0, 0)
+        self.__round_end = time.time() + 120
+        self.__skip_current_word = pygame.Surface((100, 50), pygame.SRCALPHA)
+        self.__skip_current_word.fill((0, 0, 0, 0))
+        self.__editing_text = False
+        pygame.draw.rect(
+            self.__skip_current_word, (*BLUE, 255), (0, 0, 100, 50), border_radius=25
+        )
 
-        self.__skip_current_word = pygame.Surface((1920, 1080))
-        pygame.draw.rect(self.__canvas, BLUE, (0, 0, 100, 50), border_radius=25)
-
-    def skip_cur_word_renderer(self):
-        self.screen.blit(self.__skip_current_word, (960, 100))
+        self.__images = {}
+        for image in ["add", "minus"]:
+            i = pygame.image.load("images/" + image + ".png")
+            i = pygame.transform.scale(i, (32, 32))
+            self.__images[image] = i
 
     def render_loop(self):
         while self.__running:
@@ -218,13 +229,38 @@ class Renderer:
                     self.__running = False
                 # Event checks:
                 elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        self.__canvas.fill(GRAY)
+                    if event.key == pygame.K_j:
+                        how_long = time.time()
+                        self.filler(mouse_pos)
+                        print('How long ali ' + str(time.time()-how_long))
+
+                    if event.key == pygame.K_k:
+                        threading.Thread(target=lambda: self.alex_filler(mouse_pos)).start()
+
+                    if event.key == pygame.K_h:
+                        pygame.draw.rect(self.__canvas, self.__current_RGB, (100, 100, 100, 100), 4)
+                        pygame.draw.rect(self.__canvas, self.__current_RGB, (250, 100, 100, 100), 4)
+                        pygame.draw.rect(self.__canvas, self.__current_RGB, (100, 250, 100, 100), 4)
+                        pygame.draw.rect(self.__canvas, self.__current_RGB, (250, 250, 100, 100), 4)
+                        pygame.draw.rect(self.__canvas, self.__current_RGB, (500, 100, 100, 100), 4)
+                        pygame.draw.rect(self.__canvas, self.__current_RGB, (650, 100, 100, 100), 4)
+                        pygame.draw.rect(self.__canvas, self.__current_RGB, (500, 250, 100, 100), 4)
+                        pygame.draw.rect(self.__canvas, self.__current_RGB, (650, 250, 100, 100), 4)
+                        pygame.draw.rect(self.__canvas, self.__current_RGB, (100, 500, 100, 100), 4)
+                        pygame.draw.rect(self.__canvas, self.__current_RGB, (250, 500, 100, 100), 4)
+                        pygame.draw.rect(self.__canvas, self.__current_RGB, (100, 650, 100, 100), 4)
+                        pygame.draw.rect(self.__canvas, self.__current_RGB, (250, 650, 100, 100), 4)
+                        pygame.draw.rect(self.__canvas, self.__current_RGB, (500, 500, 100, 100), 4)
+                        pygame.draw.rect(self.__canvas, self.__current_RGB, (650, 500, 100, 100), 4)
+                        pygame.draw.rect(self.__canvas, self.__current_RGB, (500, 650, 100, 100), 4)
+                        pygame.draw.rect(self.__canvas, self.__current_RGB, (650, 650, 100, 100), 4)
+
                     for box in entryboxes:
-                        if (
-                            box.writing
-                            and 32 <= event.key <= 126
-                            or event.key is (K_RETURN or K_KP_ENTER)
+                        if not event.unicode:
+                            continue
+                        if box.writing and (
+                            (32 <= ord(event.unicode) <= 126)
+                            or (event.key == pygame.K_BACKSPACE)
                         ):
                             box.update_string(event)
 
@@ -232,18 +268,28 @@ class Renderer:
                     if event.button == 1:
                         self._reset_states()
                         for box in entryboxes:
-                            if box.rect.collidepoint(mouse_pos):
-                                print("Clicked")
-                                box.writing = True
+                            if box.rect.collidepoint(pygame.mouse.get_pos()):
+                                box.text_box_clicked()
                             else:
-                                box.writing = False
-                        if self.__current_tool == "Drawing":
-                            self.__current_tool_active = True
-                            self.__last_draw_pos = mouse_pos
+                                box.text_box_not_clicked()
+                        else:
+                            if self.__current_tool == "Drawing":
+                                self.__current_tool_active = True
+                                self.__last_draw_pos = mouse_pos
 
-                        elif self.__current_tool == "Rubber":
-                            self.__current_tool_active = True
-                            self.__last_draw_pos = mouse_pos
+                            elif self.__current_tool == "Rubber":
+                                self.__current_tool_active = True
+                                self.__last_draw_pos = mouse_pos
+
+                            if (
+                                960 < mouse_pos[0] < 1060
+                                and 100 < mouse_pos[1] < 150
+                                and self.__skip_current_word.get_at(
+                                    (mouse_pos[0] - 960, mouse_pos[1] - 100)
+                                )
+                                == (*BLUE, 255)
+                            ):
+                                print("gimme my new word boi")
 
                     elif event.button == 3:
                         self.options_menu()
@@ -274,8 +320,8 @@ class Renderer:
             self.skip_cur_word_renderer()
             for box in entryboxes:
                 box.render()
-
-            self.__clock.tick(60)
+            self.timer()
+            self.clock.tick(60)
             pygame.display.update()
 
     def _reset_states(self):
@@ -299,6 +345,9 @@ class Renderer:
             True,
             (111, 111, 111),
         )
+
+    def skip_cur_word_renderer(self):
+        self.__canvas.blit(self.__skip_current_word, (960, 100))
 
     def _word_list_renderer(self):
         lines_taken = 0
@@ -327,20 +376,39 @@ class Renderer:
             )
             lines_taken += 1
 
-    def word_adder_logic_shit(self):
-        ...
-
-    def draw_tools(self):
-        ...
-
     def drawing(self, position, RGB):
         # [pos before last pos, last pos, current pos]
         self.__past_drawing_points.append(position)
 
         if len(self.__past_drawing_points) == 1:
-            ...
+            pygame.draw.circle(
+                self.__canvas,
+                RGB,
+                self.__past_drawing_points[0],
+                self.__pen_size // 2,
+            )
+
         elif len(self.__past_drawing_points) == 2:
-            ...
+            pygame.draw.line(
+                self.__canvas,
+                RGB,
+                self.__past_drawing_points[0],
+                self.__past_drawing_points[1],
+                self.__pen_size,
+            )
+            pygame.draw.circle(
+                self.__canvas,
+                self.__current_RGB,
+                self.__past_drawing_points[0],
+                self.__pen_size // 2,
+            )
+            pygame.draw.circle(
+                self.__canvas,
+                self.__current_RGB,
+                self.__past_drawing_points[1],
+                self.__pen_size // 2,
+            )
+
         else:
             try:
                 draw_line_interpolated_1(
@@ -353,17 +421,47 @@ class Renderer:
 
     def options_menu(self):
         self.__options_menu = pygame.Surface((400, 400), pygame.SRCALPHA)
-        pygame.draw.circle(self.__options_menu, (0, 0, 0, 255), (200, 200), 200)
-        pygame.draw.circle(self.__options_menu, (0, 0, 0, 0), (200, 200), 50)
-        pygame.draw.line(self.__options_menu, (0, 0, 0, 0), (0, 0), (400, 400), width=5)
-        pygame.draw.line(self.__options_menu, (0, 0, 0, 0), (0, 400), (400, 0), width=5)
-        pygame.draw.line(self.__options_menu, (0, 0, 0, 0), (0, 400), (400, 0), width=5)
+        pygame.draw.circle(self.__options_menu, (0, 0, 0, 255), (200, 200), 200, 2)
+        pygame.draw.circle(self.__options_menu, (0, 0, 0, 255), (200, 200), 100, 2)
+
+        # pygame.draw.line(self.__options_menu, (0, 0, 0, 255), (0, 0), (400, 400), width=5)
+        # pygame.draw.line(self.__options_menu, (0, 0, 0, 255), (0, 400), (400, 0), width=5)
+        # pygame.draw.line(self.__options_menu, (0, 0, 0, 255), (0, 400), (400, 0), width=5)
         pygame.draw.line(
-            self.__options_menu, (0, 0, 0, 0), (200, 400), (200, 0), width=5
+            self.__options_menu, (0, 0, 0, 255), (50, 50), (135, 135), width=12
         )
         pygame.draw.line(
-            self.__options_menu, (0, 0, 0, 0), (0, 200), (400, 200), width=5
+            self.__options_menu, (0, 0, 0, 0), (50, 50), (135, 135), width=6
         )
+        pygame.draw.line(
+            self.__options_menu, (0, 0, 0, 255), (260, 260), (350, 350), width=12
+        )
+        pygame.draw.line(
+            self.__options_menu, (0, 0, 0, 0), (260, 260), (350, 350), width=6
+        )
+        pygame.draw.line(
+            self.__options_menu, (0, 0, 0, 255), (200, 0), (200, 100), width=12
+        )
+        pygame.draw.line(
+            self.__options_menu, (0, 0, 0, 255), (200, 300), (200, 400), width=12
+        )
+        pygame.draw.line(
+            self.__options_menu, (0, 0, 0, 255), (0, 200), (100, 200), width=12
+        )
+        pygame.draw.line(
+            self.__options_menu, (0, 0, 0, 255), (300, 200), (400, 200), width=12
+        )
+        pygame.draw.line(
+            self.__options_menu, (0, 0, 0, 0), (200, 0), (200, 400), width=8
+        )
+        pygame.draw.line(
+            self.__options_menu, (0, 0, 0, 0), (0, 200), (400, 200), width=8
+        )
+
+        pygame.draw.circle(self.__options_menu, (0, 0, 0, 0), (200, 200), 220, 20)
+        pygame.draw.circle(self.__options_menu, (0, 0, 0, 0), (200, 200), 98, 20)
+
+        self.__options_menu.blit(self.__images["add"], (0, 0))
 
     def options_checker(self, mouse_pos):
         location_mouse = (
@@ -426,7 +524,61 @@ class Renderer:
         self.__current_tool = "Drawing"
 
     def set_filler(self):
-        ...
+        self.__current_tool == "Filler"
+
+    def alex_filler(self, mouse_pos):
+        how_long = time.time()
+        stack = [mouse_pos]
+
+        while stack:
+            item = stack.pop(0)
+
+            for offset in [(1, 0), (0, 1), (-1, 0), (0, -1)]:
+                question = (
+                    item[0] + offset[0],
+                    item[1] + offset[1]
+                )
+
+                if question in stack:
+                    continue
+
+                if self.__canvas.get_at(question) != GRAY:
+                    continue
+
+                stack.insert(0, question)
+
+            self.__canvas.set_at(item, self.__current_RGB)
+            # self.screen.blit(self.__canvas, (0, 0))
+            # pygame.display.update()
+
+        print('How long alex ' + str(time.time() - how_long))
+
+    def filler(self, mouse_pos):
+        fill_canvas = pygame.Surface((1920, 1080), pygame.SRCALPHA)
+        fill_canvas.fill((0, 0, 0, 0))
+        completed_stack = []
+        current_stack = [mouse_pos]
+        while len(current_stack) > 0:
+            if self.__canvas.get_at(current_stack[-1]) == GRAY:
+                for y in range(3):
+                    for x in range(3):
+                        p = (
+                            current_stack[-1][0] - 1 + y,
+                            current_stack[-1][1] - 1 + x,
+                        )
+                        if (
+                                p not in completed_stack
+                                and p not in current_stack
+                                and not (y == 1 and x == 1)
+                        ):
+                            current_stack.append(p)
+
+                completed_stack.append(current_stack.pop(-1))
+                fill_canvas.set_at(completed_stack[-1], self.__current_RGB)
+            else:
+                current_stack.pop(-1)
+
+        self.__canvas.blit(fill_canvas, (0, 0))
 
     def color_setter(self):
         ...
@@ -436,31 +588,42 @@ class Renderer:
 
 
 class TextEntryBox:
-    def __init__(self, renderer, vals):
+    def __init__(self, renderer, vals, col=SLIGHTLY_DARKER_GRAY):
         self.writing = False
         self._current_string: str = ""
         self.renderer = renderer
         entryboxes.append(self)
-
+        self.col = col
         self.rect: pygame.rect.Rect = pygame.Rect(vals)
         self.__box_surface = pygame.Surface((vals[2], vals[3]))
 
         self.__font: pygame.font.Font = renderer.font
+        self.__cursor_surf = pygame.Surface((4, 30))
+
+    def text_box_clicked(self):
+        self.writing = True
+        self.col = SLIGHTLY_DARKER_DARKER_GRAY
+
+    def text_box_not_clicked(self):
+        self.writing = False
+        self.col = SLIGHTLY_DARKER_GRAY
 
     def update_string(self, event):
         if event.key == K_BACKSPACE and self._current_string != "":
             self._current_string = self._current_string[:-1]
-            print(self._current_string)
-        else:
+
+        elif event.key != K_BACKSPACE:
             self._current_string = self._current_string + event.unicode
-            print(self._current_string)
 
     def render(self):
         rendered_text = self.__font.render(self._current_string, True, BLACK)
-        self.__box_surface.fill(SLIGHTLY_DARKER_GRAY)
-        pygame.draw.rect(
-            self.__box_surface, RED, (0, 0, *self.__box_surface.get_size()), width=3
-        )
+        text_rect = rendered_text.get_rect()
+        if (pygame.time.get_ticks() % 1 > 1/2) and self.writing:
+            self.__cursor_surf.fill(BLACK)
+        else:
+            self.__cursor_surf.fill(BLUE)
+        self.__box_surface.fill(self.col)
+        pygame.draw.rect(self.__box_surface, RED, (0, 0, *self.__box_surface.get_size()), width=3)
         self.__box_surface.blit(rendered_text, (3, 3))
         self.renderer.screen.blit(self.__box_surface, self.rect)
 

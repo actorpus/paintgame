@@ -11,6 +11,7 @@ import math
 
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
+CANVAS_BACKGROUND = (232, 252, 255)
 GRAY, SLIGHTLY_DARKER_GRAY, SLIGHTLY_DARKER_DARKER_GRAY = (
     (200, 200, 200),
     (190, 190, 190),
@@ -118,7 +119,10 @@ class Client(threading.Thread):
 
         elif packet == b"CHAT":
             message = self._read_string_secure()
+            print(f" [ \033[34mClient\033[0m ] Received chat message '{message}'")
+
             self._chat.append(message.strip())
+            print(f" [ \033[34mClient\033[0m ] Chat log '{self._chat}'")
 
         elif packet == b"UPDT":
             le = self._read_string_secure()
@@ -128,8 +132,11 @@ class Client(threading.Thread):
 
     def close(self):
         self._running = False
+        print(f" [ \033[34mClient\033[0m ] Closing server")
 
     def send_message(self, word):
+        print(f" [ \033[34mClient\033[0m ] Sending chat message '{word}'")
+
         self._socket.send(b"WORD")
         self._send_string_secure(word)
 
@@ -203,7 +210,7 @@ class Renderer:
         self.__current_RGB = (0, 0, 0)
         self.__last_draw_pos = (0, 0)
         self.__canvas = pygame.Surface((1920, 1080))
-        self.__canvas.fill(GRAY)
+        self.__canvas.fill(CANVAS_BACKGROUND)
         self.clock = pygame.time.Clock()
         self.__options_menu_open = False
         self.__settings_pos = (0, 0)
@@ -229,31 +236,10 @@ class Renderer:
                     self.__running = False
                 # Event checks:
                 elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_j:
-                        how_long = time.time()
-                        self.filler(mouse_pos)
-                        print('How long ali ' + str(time.time()-how_long))
-
-                    if event.key == pygame.K_k:
-                        threading.Thread(target=lambda: self.alex_filler(mouse_pos)).start()
-
                     if event.key == pygame.K_h:
-                        pygame.draw.rect(self.__canvas, self.__current_RGB, (100, 100, 100, 100), 4)
-                        pygame.draw.rect(self.__canvas, self.__current_RGB, (250, 100, 100, 100), 4)
-                        pygame.draw.rect(self.__canvas, self.__current_RGB, (100, 250, 100, 100), 4)
-                        pygame.draw.rect(self.__canvas, self.__current_RGB, (250, 250, 100, 100), 4)
-                        pygame.draw.rect(self.__canvas, self.__current_RGB, (500, 100, 100, 100), 4)
-                        pygame.draw.rect(self.__canvas, self.__current_RGB, (650, 100, 100, 100), 4)
-                        pygame.draw.rect(self.__canvas, self.__current_RGB, (500, 250, 100, 100), 4)
-                        pygame.draw.rect(self.__canvas, self.__current_RGB, (650, 250, 100, 100), 4)
-                        pygame.draw.rect(self.__canvas, self.__current_RGB, (100, 500, 100, 100), 4)
-                        pygame.draw.rect(self.__canvas, self.__current_RGB, (250, 500, 100, 100), 4)
-                        pygame.draw.rect(self.__canvas, self.__current_RGB, (100, 650, 100, 100), 4)
-                        pygame.draw.rect(self.__canvas, self.__current_RGB, (250, 650, 100, 100), 4)
-                        pygame.draw.rect(self.__canvas, self.__current_RGB, (500, 500, 100, 100), 4)
-                        pygame.draw.rect(self.__canvas, self.__current_RGB, (650, 500, 100, 100), 4)
-                        pygame.draw.rect(self.__canvas, self.__current_RGB, (500, 650, 100, 100), 4)
-                        pygame.draw.rect(self.__canvas, self.__current_RGB, (650, 650, 100, 100), 4)
+                        pygame.draw.rect(
+                            self.__canvas, self.__current_RGB, (100, 100, 100, 100), 4
+                        )
 
                     for box in entryboxes:
                         if not event.unicode:
@@ -310,7 +296,7 @@ class Renderer:
                 self.drawing(mouse_pos, self.__current_RGB)
 
             if self.__current_tool == "Rubber" and self.__current_tool_active:
-                self.drawing(mouse_pos, GRAY)
+                self.drawing(mouse_pos, CANVAS_BACKGROUND)
 
             self.screen.blit(self.__canvas, (0, 0))
             if self.__options_menu_open:
@@ -419,26 +405,47 @@ class Renderer:
 
             self.__past_drawing_points.pop(0)
 
+    def timer(self):
+        self.screen.blit(
+            self.font.render(
+                str(int(self.__round_end - time.time())), True, BLACK
+            ),
+            (800, 500),
+        )
+
     def options_menu(self):
         self.__options_menu = pygame.Surface((400, 400), pygame.SRCALPHA)
+        pygame.draw.circle(self.__options_menu, (*GRAY, 255), (200, 200), 200)
+        pygame.draw.circle(self.__options_menu, (0, 0, 0, 0), (200, 200), 95)
         pygame.draw.circle(self.__options_menu, (0, 0, 0, 255), (200, 200), 200, 2)
         pygame.draw.circle(self.__options_menu, (0, 0, 0, 255), (200, 200), 100, 2)
 
-        # pygame.draw.line(self.__options_menu, (0, 0, 0, 255), (0, 0), (400, 400), width=5)
-        # pygame.draw.line(self.__options_menu, (0, 0, 0, 255), (0, 400), (400, 0), width=5)
-        # pygame.draw.line(self.__options_menu, (0, 0, 0, 255), (0, 400), (400, 0), width=5)
+       # angled lines
         pygame.draw.line(
-            self.__options_menu, (0, 0, 0, 255), (50, 50), (135, 135), width=12
+            self.__options_menu, (0, 0, 0, 255), (50, 50), (135, 135), width=16
         )
         pygame.draw.line(
-            self.__options_menu, (0, 0, 0, 0), (50, 50), (135, 135), width=6
+            self.__options_menu, (0, 0, 0, 0), (50, 50), (135, 135), width=10
         )
         pygame.draw.line(
-            self.__options_menu, (0, 0, 0, 255), (260, 260), (350, 350), width=12
+            self.__options_menu, (0, 0, 0, 255), (50, 350), (135, 265), width=16
         )
         pygame.draw.line(
-            self.__options_menu, (0, 0, 0, 0), (260, 260), (350, 350), width=6
+            self.__options_menu, (0, 0, 0, 0), (50, 350), (135, 265), width=10
         )
+        pygame.draw.line(
+            self.__options_menu, (0, 0, 0, 255), (260, 260), (350, 350), width=16
+        )
+        pygame.draw.line(
+            self.__options_menu, (0, 0, 0, 0), (260, 260), (350, 350), width=10
+        )
+        pygame.draw.line(
+            self.__options_menu, (0, 0, 0, 255), (260, 135), (350, 50), width=16
+        )
+        pygame.draw.line(
+            self.__options_menu, (0, 0, 0, 0), (260, 135), (350, 50), width=10
+        )
+        # straight lines
         pygame.draw.line(
             self.__options_menu, (0, 0, 0, 255), (200, 0), (200, 100), width=12
         )
@@ -451,6 +458,7 @@ class Renderer:
         pygame.draw.line(
             self.__options_menu, (0, 0, 0, 255), (300, 200), (400, 200), width=12
         )
+
         pygame.draw.line(
             self.__options_menu, (0, 0, 0, 0), (200, 0), (200, 400), width=8
         )
@@ -480,14 +488,14 @@ class Renderer:
 
             #          [pen]          [increase pen size]
             #   [rubber]                            [decrease pen size]
-            #   [blank]                             [blank]
+            #   [fill section]                      [blank]
             #          [clear screen] [blank]
 
             if angle < math.pi / 4:
                 self.clear_screen()
 
             elif angle < math.pi / 2:
-                print("Option 2")
+                threading.Thread(target=lambda: self.filler((self.__settings_pos[0] + 200, self.__settings_pos[1] + 200)), daemon=True).start()
 
             elif angle < math.pi * 3 / 4:
                 self.set_rubber()
@@ -507,6 +515,8 @@ class Renderer:
             else:
                 print("Option 8")
 
+        pygame.mouse.set_pos((self.__settings_pos[0] + 200, self.__settings_pos[1] + 200))
+
     def pen_size_increase(self):
         self.__pen_size += 2
 
@@ -524,67 +534,40 @@ class Renderer:
         self.__current_tool = "Drawing"
 
     def set_filler(self):
-        self.__current_tool == "Filler"
+        self.__current_tool = "Filler"
 
-    def alex_filler(self, mouse_pos):
-        how_long = time.time()
+    def filler(self, mouse_pos):
         stack = [mouse_pos]
 
         while stack:
-            item = stack.pop(0)
+            item = stack.pop()
 
             for offset in [(1, 0), (0, 1), (-1, 0), (0, -1)]:
-                question = (
-                    item[0] + offset[0],
-                    item[1] + offset[1]
-                )
+                question = (item[0] + offset[0], item[1] + offset[1])
+
+                if (
+                    question[0] < 0
+                    or question[0] > 1919
+                    or question[1] < 0
+                    or question[1] > 1079
+                ):
+                    continue
 
                 if question in stack:
                     continue
 
-                if self.__canvas.get_at(question) != GRAY:
+                if self.__canvas.get_at(question) != CANVAS_BACKGROUND:
                     continue
 
                 stack.insert(0, question)
 
             self.__canvas.set_at(item, self.__current_RGB)
-            # self.screen.blit(self.__canvas, (0, 0))
-            # pygame.display.update()
-
-        print('How long alex ' + str(time.time() - how_long))
-
-    def filler(self, mouse_pos):
-        fill_canvas = pygame.Surface((1920, 1080), pygame.SRCALPHA)
-        fill_canvas.fill((0, 0, 0, 0))
-        completed_stack = []
-        current_stack = [mouse_pos]
-        while len(current_stack) > 0:
-            if self.__canvas.get_at(current_stack[-1]) == GRAY:
-                for y in range(3):
-                    for x in range(3):
-                        p = (
-                            current_stack[-1][0] - 1 + y,
-                            current_stack[-1][1] - 1 + x,
-                        )
-                        if (
-                                p not in completed_stack
-                                and p not in current_stack
-                                and not (y == 1 and x == 1)
-                        ):
-                            current_stack.append(p)
-
-                completed_stack.append(current_stack.pop(-1))
-                fill_canvas.set_at(completed_stack[-1], self.__current_RGB)
-            else:
-                current_stack.pop(-1)
-
-        self.__canvas.blit(fill_canvas, (0, 0))
 
     def color_setter(self):
         ...
 
     def clear_screen(self):
-        self.__canvas.fill(GRAY)
+        self.__canvas.fill(CANVAS_BACKGROUND)
 
 
 class TextEntryBox:
@@ -595,8 +578,7 @@ class TextEntryBox:
         entryboxes.append(self)
         self.col = col
         self.rect: pygame.rect.Rect = pygame.Rect(vals)
-        self.__box_surface = pygame.Surface((vals[2], vals[3]))
-
+        self.__box_surface = pygame.Surface((vals[2], vals[3]), pygame.SRCALPHA)
         self.__font: pygame.font.Font = renderer.font
         self.__cursor_surf = pygame.Surface((4, 30))
 
@@ -618,13 +600,16 @@ class TextEntryBox:
     def render(self):
         rendered_text = self.__font.render(self._current_string, True, BLACK)
         text_rect = rendered_text.get_rect()
-        if (pygame.time.get_ticks() % 1 > 1/2) and self.writing:
+
+        if (time.time() % 1 > 0.5) and self.writing:
             self.__cursor_surf.fill(BLACK)
         else:
-            self.__cursor_surf.fill(BLUE)
-        self.__box_surface.fill(self.col)
-        pygame.draw.rect(self.__box_surface, RED, (0, 0, *self.__box_surface.get_size()), width=3)
+            self.__cursor_surf.fill(self.col)
+
+        pygame.draw.rect(self.__box_surface, self.col, (0, 0, *self.__box_surface.get_size()), border_radius=4)
+        pygame.draw.rect(self.__box_surface, BLACK, (0, 0, *self.__box_surface.get_size()), width=2, border_radius=4)
         self.__box_surface.blit(rendered_text, (3, 3))
+        self.__box_surface.blit(self.__cursor_surf, (text_rect.right + 4, text_rect.bottom - self.renderer.font.get_height()+5))
         self.renderer.screen.blit(self.__box_surface, self.rect)
 
 
@@ -647,7 +632,6 @@ if __name__ == "__main__":
         print("\033[31m", end="")
         print(traceback.format_exc(), end="\033[0m\n")
 
-    print("Closing server")
     server.close()
 
 # 2

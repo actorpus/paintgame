@@ -12,7 +12,7 @@ class Game:
     def __init__(self, server):
         self.current_word = "tits"
         self.server = server
-        self.game_is_running = False
+        self.game_is_running = True
 
     def load_random_word(self):
         with open("WordList.txt") as file:

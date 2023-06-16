@@ -637,5 +637,3 @@ if __name__ == "__main__":
         print(traceback.format_exc(), end="\033[0m\n")
 
     server.close()
-
-# 2

@@ -579,17 +579,25 @@ class Renderer:
 
 
 class TextEntryBox:
+    # To add arrow key navigation I could:
+    # - Instead have each character on their own rendered surface, makes moving the cursor along the text much easier as i
+    #   simply traverse the array to the index of the previous/next characters surface and blit the cursor in its new position [SIMPLE to implement, SLOW to run]
+    # - Almost the same as the previous but only have 2 surfaces, one rendering to the LEFT of the cursor and one to the RIGHT (obviously wouldn't render anything
+    #   extra if there was nothing on one of the sides) [MORE DIFFICULT to implement, FASTER to run]
+
     def __init__(self, renderer, vals, col=SLIGHTLY_DARKER_GRAY, on_enter=None, blur=False):
-        # Vars
-        self.writing = False
+        # Private
         self.__current_string: str = ""
         self.__display_string = self.__current_string
-        self.renderer = renderer
         self.__on_enter = on_enter
         self.__blur = blur
+        # Public
         entryboxes.append(self)
+        self.writing = False
         self.col = col
+        self.renderer = renderer
         self.rect: pygame.rect.Rect = pygame.Rect(vals)
+
         # Setup
         self.__box_surface = pygame.Surface((vals[2], vals[3]), pygame.SRCALPHA)
         self.__font: pygame.font.Font = renderer.font

@@ -4,4 +4,4 @@
 3. If you click and dont drag, it doent draw. 
 4. Input box's have diferent outline when selected
 5. Alistair needs to remove magic variables that broke font size when swapping font
-6. 
+6. [DONE] Password blurring for text boxes

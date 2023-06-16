@@ -23,11 +23,15 @@ INTERPOLATE_STEP = 20
 WELCOME_MESSAGE = "Welcome to the game"
 
 entryboxes = []
-important_keys = [K_RETURN, K_KP_ENTER, K_BACKSPACE]
+important_keys = [K_RETURN, K_KP_ENTER, K_BACKSPACE, K_LEFT, K_RIGHT]
+arrow_keys = [K_LEFT, K_RIGHT]
 
 
-def string_pop(i, string):
-    return string[:i] + string[i+1:]
+def stringpop(i, string):
+    if i != -1:
+        return string[:i] + string[i + 1:]
+    else:
+        return string[:i]
 
 
 def interpolate(a, b, i):
@@ -199,8 +203,8 @@ class Renderer:
         pygame.font.init()
         pygame.display.set_caption("Drawing fun paint")
         self.server = client
-        self.screen = pygame.display.set_mode((1920, 1080), pygame.FULLSCREEN)
-        self.font = pygame.font.FontType("font.ttf", 18)
+        self.screen = pygame.display.set_mode((1920, 1080))
+        self.font = pygame.font.FontType("consola.ttf", 18)
         self.__running = True
         self.__is_drawing = True
         self.__is_guessing = False
@@ -240,19 +244,21 @@ class Renderer:
                     self.__running = False
                 # Event checks:
                 elif event.type == pygame.KEYDOWN:
+                    print(event.key, "\n", K_LEFT, "\n", K_RIGHT)
                     if event.key == pygame.K_h:
                         pygame.draw.rect(
                             self.__canvas, self.__current_RGB, (100, 100, 100, 100), 4
                         )
 
                     for box in entryboxes:
-                        if not event.unicode:
-                            continue
-                        if box.writing and (
-                                (32 <= ord(event.unicode) <= 126)
-                                or (event.key in important_keys)
-                        ):
-                            box.update_string(event)
+                        if box.writing:
+                            if event.key in important_keys:
+                                box.update_string(event)
+                                break
+                            elif not event.unicode:
+                                continue
+                            if box.writing and (32 <= ord(event.unicode) <= 126):
+                                box.update_string(event)
 
                 elif event.type == MOUSEBUTTONDOWN:
                     if event.button == 1:
@@ -599,13 +605,13 @@ class TextEntryBox:
         self.__display_string = self.__current_string
         self.__on_enter = on_enter
         self.__blur = blur
+        self.__pointer = -1
         # Public
         entryboxes.append(self)
         self.writing = False
         self.col = col
         self.renderer = renderer
         self.rect: pygame.rect.Rect = pygame.Rect(vals)
-
         # Setup
         self.__box_surface = pygame.Surface((vals[2], vals[3]), pygame.SRCALPHA)
         self.__font: pygame.font.Font = renderer.font
@@ -624,13 +630,18 @@ class TextEntryBox:
         if event.key in important_keys:
             if self.__current_string != "":
                 if event.key == K_BACKSPACE:
-                    self.__current_string = self.__current_string.pop()
+                    self.__current_string = stringpop(self.__pointer, self.__current_string)
                 elif event.key == (K_RETURN or K_KP_ENTER):
-                    print(
-                        f" [ \033[35mTextBx\033[0m ] Sending String '{self.__display_string}' to function. "
-                    )
+                    print(f" [ \033[35mTextBx\033[0m ] Sending String '{self.__display_string}' to function. ")
                     self.__on_enter(self.__current_string)
                     self.reset_strings()
+                elif event.key == K_LEFT:
+                    self.__pointer -= 1
+                    print("pressed left")
+                elif event.key == K_RIGHT and self.__pointer != -1:
+                    print("pressed right")
+                    self.__pointer += 1
+
         elif len(self.__current_string) <= 32:
             self.__current_string = self.__current_string + event.unicode
         self.__display_string = self.__current_string
@@ -661,13 +672,7 @@ class TextEntryBox:
             border_radius=4,
         )
         self.__box_surface.blit(rendered_text, (3, 3))
-        self.__box_surface.blit(
-            self.__cursor_surf,
-            (
-                text_rect.right + 4,
-                text_rect.bottom - self.renderer.font.get_height() + 5,
-            ),
-        )
+        self.__box_surface.blit(self.__cursor_surf, (text_rect.right+2 + ((self.__pointer + 1) * 10), text_rect.bottom - self.renderer.font.get_height() + 5))
         self.renderer.screen.blit(self.__box_surface, self.rect)
 
 
@@ -690,7 +695,7 @@ if __name__ == "__main__":
         )
         password_box = TextEntryBox(
             render_me,
-            (1575, 765+render_me.font.get_height() + 20, 325, render_me.font.get_height() + 10),
+            (1575, 765 + render_me.font.get_height() + 20, 325, render_me.font.get_height() + 10),
             on_enter=server.send_message,
             blur=True
         )

@@ -23,6 +23,7 @@ INTERPOLATE_STEP = 20
 WELCOME_MESSAGE = "Welcome to the game"
 
 entryboxes = []
+important_keys = [K_RETURN, K_KP_ENTER, K_BACKSPACE]
 
 
 def interpolate(a, b, i):
@@ -140,8 +141,6 @@ class Client(threading.Thread):
         self._socket.send(b"WORD")
         self._send_string_secure(word)
 
-        print("send init", word)
-
     def wait_till_success(self, query_time=0.5):
         while not self._operable:
             time.sleep(query_time)
@@ -197,7 +196,7 @@ class Renderer:
         pygame.display.set_caption("Drawing fun paint")
         self.server = client
         self.screen = pygame.display.set_mode((1920, 1080), pygame.FULLSCREEN)
-        self.font = pygame.font.SysFont(pygame.font.get_default_font(), 25)
+        self.font = pygame.font.FontType("font.ttf", 18)
         self.__running = True
         self.__is_drawing = True
         self.__is_guessing = False
@@ -218,6 +217,7 @@ class Renderer:
         self.__skip_current_word = pygame.Surface((100, 50), pygame.SRCALPHA)
         self.__skip_current_word.fill((0, 0, 0, 0))
         self.__editing_text = False
+        self.__options_menu = pygame.Surface((400, 400), pygame.SRCALPHA)
         pygame.draw.rect(
             self.__skip_current_word, (*BLUE, 255), (0, 0, 100, 50), border_radius=25
         )
@@ -246,7 +246,7 @@ class Renderer:
                             continue
                         if box.writing and (
                             (32 <= ord(event.unicode) <= 126)
-                            or (event.key == pygame.K_BACKSPACE)
+                            or (event.key in important_keys)
                         ):
                             box.update_string(event)
 
@@ -257,7 +257,7 @@ class Renderer:
                             if box.rect.collidepoint(pygame.mouse.get_pos()):
                                 box.text_box_clicked()
                             else:
-                                box.text_box_not_clicked()
+                                self._reset_states(box)
                         else:
                             if self.__current_tool == "Drawing":
                                 self.__current_tool_active = True
@@ -310,9 +310,12 @@ class Renderer:
             self.clock.tick(60)
             pygame.display.update()
 
-    def _reset_states(self):
+    def _reset_states(self, box=None):
         # Careful with what you put in the function, might end up screwing things up later down the line... (tommys predictions)
         self.__options_menu_open = False
+        if box is not None:
+            box.writing = False
+            box.col = SLIGHTLY_DARKER_GRAY
 
     def word_checker(self, input):
         ...
@@ -407,20 +410,18 @@ class Renderer:
 
     def timer(self):
         self.screen.blit(
-            self.font.render(
-                str(int(self.__round_end - time.time())), True, BLACK
-            ),
+            self.font.render(str(int(self.__round_end - time.time())), True, BLACK),
             (800, 500),
         )
 
     def options_menu(self):
-        self.__options_menu = pygame.Surface((400, 400), pygame.SRCALPHA)
+        # self.__options_menu = pygame.Surface((400, 400), pygame.SRCALPHA)
         pygame.draw.circle(self.__options_menu, (*GRAY, 255), (200, 200), 200)
         pygame.draw.circle(self.__options_menu, (0, 0, 0, 0), (200, 200), 95)
         pygame.draw.circle(self.__options_menu, (0, 0, 0, 255), (200, 200), 200, 2)
         pygame.draw.circle(self.__options_menu, (0, 0, 0, 255), (200, 200), 100, 2)
 
-       # angled lines
+        # angled lines
         pygame.draw.line(
             self.__options_menu, (0, 0, 0, 255), (50, 50), (135, 135), width=16
         )
@@ -495,7 +496,12 @@ class Renderer:
                 self.clear_screen()
 
             elif angle < math.pi / 2:
-                threading.Thread(target=lambda: self.filler((self.__settings_pos[0] + 200, self.__settings_pos[1] + 200)), daemon=True).start()
+                threading.Thread(
+                    target=lambda: self.filler(
+                        (self.__settings_pos[0] + 200, self.__settings_pos[1] + 200)
+                    ),
+                    daemon=True,
+                ).start()
 
             elif angle < math.pi * 3 / 4:
                 self.set_rubber()
@@ -515,7 +521,9 @@ class Renderer:
             else:
                 print("Option 8")
 
-        pygame.mouse.set_pos((self.__settings_pos[0] + 200, self.__settings_pos[1] + 200))
+        pygame.mouse.set_pos(
+            (self.__settings_pos[0] + 200, self.__settings_pos[1] + 200)
+        )
 
     def pen_size_increase(self):
         self.__pen_size += 2
@@ -571,30 +579,34 @@ class Renderer:
 
 
 class TextEntryBox:
-    def __init__(self, renderer, vals, col=SLIGHTLY_DARKER_GRAY):
+    def __init__(self, renderer, vals, col=SLIGHTLY_DARKER_GRAY, on_enter=None):
         self.writing = False
         self._current_string: str = ""
         self.renderer = renderer
+        self.__on_enter = on_enter
         entryboxes.append(self)
         self.col = col
         self.rect: pygame.rect.Rect = pygame.Rect(vals)
         self.__box_surface = pygame.Surface((vals[2], vals[3]), pygame.SRCALPHA)
         self.__font: pygame.font.Font = renderer.font
-        self.__cursor_surf = pygame.Surface((4, 30))
+        self.__cursor_surf = pygame.Surface((2, self.__font.get_height() - 4))
 
     def text_box_clicked(self):
         self.writing = True
-        self.col = SLIGHTLY_DARKER_DARKER_GRAY
-
-    def text_box_not_clicked(self):
-        self.writing = False
-        self.col = SLIGHTLY_DARKER_GRAY
+        self.col = GRAY
 
     def update_string(self, event):
-        if event.key == K_BACKSPACE and self._current_string != "":
-            self._current_string = self._current_string[:-1]
-
-        elif event.key != K_BACKSPACE:
+        if event.key in important_keys:
+            if self._current_string != "":
+                if event.key == K_BACKSPACE:
+                    self._current_string = self._current_string[:-1]
+                elif event.key == (K_RETURN or K_KP_ENTER):
+                    print(
+                        f" [ \033[35mTextBx\033[0m ] Sending String '{self._current_string}' to function."
+                    )
+                    self.__on_enter(self._current_string)
+                    self._current_string = ""
+        elif len(self._current_string) <= 32:
             self._current_string = self._current_string + event.unicode
 
     def render(self):
@@ -606,10 +618,27 @@ class TextEntryBox:
         else:
             self.__cursor_surf.fill(self.col)
 
-        pygame.draw.rect(self.__box_surface, self.col, (0, 0, *self.__box_surface.get_size()), border_radius=4)
-        pygame.draw.rect(self.__box_surface, BLACK, (0, 0, *self.__box_surface.get_size()), width=2, border_radius=4)
+        pygame.draw.rect(
+            self.__box_surface,
+            self.col,
+            (0, 0, *self.__box_surface.get_size()),
+            border_radius=4,
+        )
+        pygame.draw.rect(
+            self.__box_surface,
+            BLACK,
+            (0, 0, *self.__box_surface.get_size()),
+            width=2,
+            border_radius=4,
+        )
         self.__box_surface.blit(rendered_text, (3, 3))
-        self.__box_surface.blit(self.__cursor_surf, (text_rect.right + 4, text_rect.bottom - self.renderer.font.get_height()+5))
+        self.__box_surface.blit(
+            self.__cursor_surf,
+            (
+                text_rect.right + 4,
+                text_rect.bottom - self.renderer.font.get_height() + 5,
+            ),
+        )
         self.renderer.screen.blit(self.__box_surface, self.rect)
 
 
@@ -625,7 +654,11 @@ if __name__ == "__main__":
         render_me = Renderer(server)
 
         # Other class instantiations
-        new_words_box = TextEntryBox(render_me, (150, 900, 1000, 100))
+        guesses = TextEntryBox(
+            render_me,
+            (1575, 765, 325, render_me.font.get_height() + 10),
+            on_enter=server.send_message,
+        )
 
         render_me.render_loop()
     except Exception:
@@ -633,5 +666,3 @@ if __name__ == "__main__":
         print(traceback.format_exc(), end="\033[0m\n")
 
     server.close()
-
-# 2

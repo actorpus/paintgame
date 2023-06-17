@@ -259,7 +259,6 @@ class Renderer:
                     self.__running = False
                 # Event checks:
                 elif event.type == pygame.KEYDOWN:
-                    print(event.key, "\n", K_LEFT, "\n", K_RIGHT)
                     if event.key == pygame.K_h:
                         pygame.draw.rect(
                             self.__canvas, self.__current_RGB, (100, 100, 100, 100), 4
@@ -281,6 +280,11 @@ class Renderer:
                         for box in entryboxes:
                             if box.rect.collidepoint(pygame.mouse.get_pos()):
                                 box.text_box_clicked()
+                            elif box.has_button:
+                                if box.button_rect.collidepoint(pygame.mouse.get_pos()):
+                                    box.on_button_press()
+                                else:
+                                    self._reset_states(box)
                             else:
                                 self._reset_states(box)
                         else:
@@ -341,6 +345,7 @@ class Renderer:
         if box is not None:
             box.writing = False
             box.col = SLIGHTLY_DARKER_GRAY
+            box.reset_strings(True)
 
     def word_checker(self, input):
         ...
@@ -604,10 +609,11 @@ class Renderer:
 
 
 class TextEntryBox:
-    def __init__(self, renderer, vals, col=SLIGHTLY_DARKER_GRAY, on_enter=None, blur=False):
+    def __init__(self, renderer, vals, default="", col=SLIGHTLY_DARKER_GRAY, on_enter=None, blur=False, button=False):
         # Private
-        self.__current_string: str = ""
-        self.__display_string = self.__current_string
+        self.__default = default
+        self.__current_string: str = default
+        self.__display_string: str = default
         self.__on_enter = on_enter
         self.__blur = blur
         self.__pointer = -1
@@ -621,15 +627,31 @@ class TextEntryBox:
         self.__box_surface = pygame.Surface((vals[2], vals[3]), pygame.SRCALPHA)
         self.__font: pygame.font.Font = renderer.font
         self.__cursor_surf = pygame.Surface((2, self.__font.get_height() - 4))
+        self.has_button = button
+        if self.has_button:
+            self.__icon = pygame.image.load("images/tick.png")
+            self.__button_surface = pygame.Surface((40, vals[3]))
+            self.__button_surface.fill(self.col)
+            self.__button_surface.blit(self.__icon, (-5, 5))
+            self.button_rect = pygame.Rect(vals[0]-self.__button_surface.get_width()-10, vals[1], 50, 20)
 
     def text_box_clicked(self):
         # Click response
         self.writing = True
+        self.reset_strings()
         self.col = GRAY
 
-    def reset_vars(self):
-        self.__current_string, self.__display_string = "", ""
+    def reset_strings(self, default=False):
+        if not default:
+            self.__display_string = ""
+        else:
+            self.__display_string = self.__default
+        self.__current_string = ""
         self.__pointer = -1
+
+    def on_button_press(self):
+        if self.__current_string != "":
+            self.__on_enter(self.__current_string)
 
     def update_string(self, event):
         # Keyboard handler
@@ -640,12 +662,10 @@ class TextEntryBox:
                 elif event.key == (K_RETURN or K_KP_ENTER):
                     print(f" [ \033[35mTextBx\033[0m ] Sending String '{self.__display_string}' to function. ")
                     self.__on_enter(self.__current_string)
-                    self.reset_vars()
+                    self.reset_strings()
                 elif event.key == K_LEFT:
                     self.__pointer -= 1
-                    print("pressed left")
                 elif event.key == K_RIGHT and self.__pointer != -1:
-                    print("pressed right")
                     self.__pointer += 1
 
         elif len(self.__current_string) <= 32:
@@ -654,7 +674,7 @@ class TextEntryBox:
 
     def render(self):
         # Drawing surfaces and blinking cursor
-        if self.__blur:
+        if self.__blur and self.__display_string != self.__default:
             self.__display_string = "".join("*" * len(self.__current_string))
         rendered_text = self.__font.render(self.__display_string, True, BLACK)
         text_rect = rendered_text.get_rect()
@@ -680,6 +700,8 @@ class TextEntryBox:
         self.__box_surface.blit(rendered_text, (3, 3))
         self.__box_surface.blit(self.__cursor_surf, (
             text_rect.right + 2 + ((self.__pointer + 1) * 10), text_rect.bottom - self.renderer.font.get_height() + 5))
+        if self.has_button:
+            self.renderer.screen.blit(self.__button_surface, self.button_rect)
         self.renderer.screen.blit(self.__box_surface, self.rect)
 
 
@@ -699,12 +721,16 @@ if __name__ == "__main__":
             render_me,
             (1575, 765, 325, render_me.font.get_height() + 10),
             on_enter=server.send_message,
+            default="Guess a word...",
+            button=True
         )
         password_box = TextEntryBox(
             render_me,
             (1575, 765 + render_me.font.get_height() + 20, 325, render_me.font.get_height() + 10),
             on_enter=server.send_message,
-            blur=True
+            blur=True,
+            default="Password",
+            button=True
         )
 
         render_me.render_loop()

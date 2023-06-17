@@ -10,6 +10,5 @@
 7. If you click and dont drag, it should  not draw a dot.
 
 #TOMMY - keep killing it
-6. Default text for text boxes that can be passed as an arg
 7. END, HOME and DEL should do their thing in text boxes
 8. Input box's have different outline when selected

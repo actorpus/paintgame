@@ -722,7 +722,6 @@ if __name__ == "__main__":
             (1575, 765, 325, render_me.font.get_height() + 10),
             on_enter=server.send_message,
             default="Guess a word...",
-            button=True
         )
         password_box = TextEntryBox(
             render_me,

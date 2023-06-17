@@ -28,10 +28,25 @@ arrow_keys = [K_LEFT, K_RIGHT]
 
 
 def stringpop(i, string):
+    """
+    remove character from string at index i
+    :return: amended string
+    """
     if i != -1:
         return string[:i] + string[i + 1:]
     else:
         return string[:i]
+
+
+def stringadd(string2, string1, i):
+    """
+    add A to B at index i
+    :return: amended string
+    """
+    if i != -1:
+        return string1[:i+1] + string2 + string1[i+1:]
+    else:
+        return string1 + string2
 
 
 def interpolate(a, b, i):
@@ -589,16 +604,6 @@ class Renderer:
 
 
 class TextEntryBox:
-    # To add arrow key navigation I could:
-    # - Instead have each character on their own rendered surface, makes moving the cursor along the text much easier as i
-    #   simply traverse the array to the index of the previous/next characters surface and blit the cursor in its new position [SIMPLE to implement, SLOW to run]
-
-    # - Almost the same as the previous but only have 2 surfaces, one rendering to the LEFT of the cursor and one to the RIGHT (obviously wouldn't render anything
-    #   extra if there was nothing on one of the sides) [MORE DIFFICULT to implement, FASTER to run]
-
-    # - Figure out some twisted way of using slicing to work my way around this and also somehow move the cursor around, its a monospace font so i can probably
-    #   hardcode that or something weird
-
     def __init__(self, renderer, vals, col=SLIGHTLY_DARKER_GRAY, on_enter=None, blur=False):
         # Private
         self.__current_string: str = ""
@@ -644,7 +649,7 @@ class TextEntryBox:
                     self.__pointer += 1
 
         elif len(self.__current_string) <= 32:
-            self.__current_string = self.__current_string + event.unicode
+            self.__current_string = stringadd(event.unicode, self.__current_string, self.__pointer)
         self.__display_string = self.__current_string
 
     def render(self):
@@ -673,7 +678,8 @@ class TextEntryBox:
             border_radius=4,
         )
         self.__box_surface.blit(rendered_text, (3, 3))
-        self.__box_surface.blit(self.__cursor_surf, (text_rect.right+2 + ((self.__pointer + 1) * 10), text_rect.bottom - self.renderer.font.get_height() + 5))
+        self.__box_surface.blit(self.__cursor_surf, (
+            text_rect.right + 2 + ((self.__pointer + 1) * 10), text_rect.bottom - self.renderer.font.get_height() + 5))
         self.renderer.screen.blit(self.__box_surface, self.rect)
 
 

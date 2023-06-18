@@ -96,7 +96,7 @@ class Client(threading.Thread):
 
     def send_initial(self):
         if not (4 <= len(self.name) <= 10):
-            raise BadConfig("Bad name length")
+            raise BadClientConfig("Bad name length")
 
         self._socket.send(b"JOIN")
         self._send_string_secure(self.name)

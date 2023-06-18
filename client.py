@@ -3,7 +3,7 @@ import socket
 import time
 
 
-WELCOME_MESSAGE = "Welcome to the game"
+WELCOME_MESSAGE = "Welcome to the game!"
 
 
 class BadClientConfig(Exception):

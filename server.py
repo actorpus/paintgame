@@ -65,6 +65,10 @@ class Server:
 
             client.send_chat_message(message)
 
+    def update_all_clients(self):
+        for client in self.clients:
+            client.send_lobby_update()
+
     def run(self):
         print(" [ \033[32mMS    \033[0m ] Starting server on port", SERVER_PORT)
         self.sock.listen(1)
@@ -114,14 +118,14 @@ class Client(threading.Thread):
         self._socket.send(b"CHAT")
         self._send_string_secure(message)
 
-    # def send_lobby_update(self):
-    #     clients = self._server.clients YO
-    #
-    #     self._socket.send(b"LOBY")
-    #     self._send_int_secure(len(clients))
-    #
-    #     for client in clients:
-    #         self._send_string_secure(client.name)
+    def send_lobby_update(self):
+        clients = self._server.clients
+
+        self._socket.send(b"LOBY")
+        self._send_int_secure(len(clients))
+
+        for client in clients:
+            self._send_string_secure(client.name)
 
     def death_spiral(self):
         self._running = False
@@ -149,6 +153,8 @@ class Client(threading.Thread):
         return data
 
     def run(self) -> None:
+        self._server.update_all_clients()
+
         while self._running:
             self._socket.settimeout(0.2)
 

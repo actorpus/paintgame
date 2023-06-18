@@ -3,10 +3,10 @@ import socket
 import time
 
 
-WELCOME_MESSAGE = "Welcome to the game"
+WELCOME_MESSAGE = "Welcome to the game! Have fun!"
 
 
-class BadConfig(Exception):
+class BadClientConfig(Exception):
     ...
 
 
@@ -26,7 +26,10 @@ class Client(threading.Thread):
         self._word_pattern = None
 
     def request_word_skip(self):
-        self._socket.send("SKIP")
+        self._socket.send(b"SKIP")
+
+    def request_game_start(self):
+        self._socket.send(b"STRT")
 
     @property
     def word_pattern(self):
@@ -63,8 +66,8 @@ class Client(threading.Thread):
             self._chat.append(message.strip())
             print(f" [ \033[34mClient\033[0m ] Chat log '{self._chat}'")
 
-        elif packet == b"UPDT":
-            le = self._read_string_secure()
+        elif packet == b"WORD":
+            self._word_pattern = self._read_string_secure()
 
         else:
             print(f" [ \033[34mClient\033[0m ] Bad packet received", packet)
@@ -96,7 +99,7 @@ class Client(threading.Thread):
 
     def send_initial(self):
         if not (4 <= len(self.name) <= 10):
-            raise BadConfig("Bad name length")
+            raise BadClientConfig("Bad name length")
 
         self._socket.send(b"JOIN")
         self._send_string_secure(self.name)

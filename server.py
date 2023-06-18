@@ -10,9 +10,9 @@ SERVER_PORT = 16324
 
 class Game:
     def __init__(self, server):
-        self.current_word = "tits"
-        self.server = server
-        self.game_is_running = True
+        self.current_word = ""
+        self.server: Server = server
+        self.game_is_running = False
 
     def load_random_word(self):
         with open("WordList.txt") as file:
@@ -26,7 +26,7 @@ class Game:
     def start_game(self):
         self.load_random_word()
         self.game_is_running = True
-        self.server.send_word_refresh()
+        self.server.send_word_refresh("lm_ w__n yo_ __e t__s")
 
     def check_word(self, guess, player):
         if not self.game_is_running:
@@ -46,6 +46,23 @@ class Game:
             self.server.send_message_to_all(f"{player.name}: {guess}")
 
 
+class ServerTimeouts(threading.Thread):
+    def __init__(self, server):
+        super(ServerTimeouts, self).__init__()
+        self.server: Server = server
+
+        self.lobby_update_time = time.time()
+
+    def run(self) -> None:
+        while True:
+            time.sleep(1)
+            t = time.time()
+
+            if self.lobby_update_time + 60 > t:
+                print(" [ \033[32mMStime\033[0m ] Sending lobby info")
+                self.server.update_all_clients()
+                self.lobby_update_time = t
+
 class Server:
     def __init__(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -64,6 +81,10 @@ class Server:
                 pass
 
             client.send_chat_message(message)
+
+    def send_word_refresh(self, word):
+        for client in self.clients:
+            client.send_word_refresh(word)
 
     def update_all_clients(self):
         for client in self.clients:
@@ -107,9 +128,16 @@ class Client(threading.Thread):
             self._name = name
             print(f" [ \033[34mC{self._port}\033[0m ] Has named themselves {name}")
 
+        elif packet == b"STRT":
+            self._server.game.start_game()
+
         else:
             print("WHAT THE FUUUUUUUUUUCK")
             print(f"Client {self._port} did a dumb and sent", packet)
+
+    def send_word_refresh(self, word):
+        self._socket.send(b"WORD")
+        self._send_string_secure(word)
 
     def send_ping(self):
         self._socket.send(b"PING")

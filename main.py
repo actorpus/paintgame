@@ -8,6 +8,7 @@ import traceback
 import hashlib
 import sys
 import math
+from utilities import *
 
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
@@ -27,39 +28,13 @@ important_keys = [K_RETURN, K_KP_ENTER, K_BACKSPACE, K_LEFT, K_RIGHT]
 arrow_keys = [K_LEFT, K_RIGHT]
 
 
-def stringpop(i, string):
-    """
-    remove character from string at index i
-    :return: amended string
-    """
-    if i != -1:
-        return string[:i] + string[i + 1:]
-    else:
-        return string[:i]
-
-
-def stringadd(string2, string1, i):
-    """
-    add A to B at index i
-    :return: amended string
-    """
-    if i != -1:
-        return string1[:i+1] + string2 + string1[i+1:]
-    else:
-        return string1 + string2
-
-
-def interpolate(a, b, i):
-    return int((a[0] * i) + (b[0] * (1 - i))), int((a[1] * i) + (b[1] * (1 - i)))
-
-
 def draw_line_interpolated_1(points, screen, rgb, line_width):
     true = (
-                   (points[-1][0] - points[-2][0]) ** 2 + (points[-1][1] - points[-2][1]) ** 2
-           ) ** 0.5
+        (points[-1][0] - points[-2][0]) ** 2 + (points[-1][1] - points[-2][1]) ** 2
+    ) ** 0.5
     projected = (
-                        (points[-2][0] - points[-3][0]) ** 2 + (points[-2][1] - points[-3][1]) ** 2
-                ) ** 0.5
+        (points[-2][0] - points[-3][0]) ** 2 + (points[-2][1] - points[-3][1]) ** 2
+    ) ** 0.5
     final = min(projected, true * 0.3)
 
     projection = (
@@ -219,7 +194,7 @@ class Renderer:
         pygame.display.set_caption("Drawing fun paint")
         self.server = client
         self.screen = pygame.display.set_mode((1920, 1080))
-        self.font = pygame.font.FontType("consola.ttf", 18)
+        self.font = pygame.font.FontType("resources/consola.ttf", 18)
         self.__running = True
         self.__is_drawing = True
         self.__is_guessing = False
@@ -245,11 +220,11 @@ class Renderer:
             self.__skip_current_word, (*BLUE, 255), (0, 0, 100, 50), border_radius=25
         )
 
-        self.__images = {}
-        for image in ["add", "minus"]:
-            i = pygame.image.load("images/" + image + ".png")
+        self.images = {}
+        for image in ["add", "minus", "tick"]:
+            i = pygame.image.load("resources/" + image + ".png")
             i = pygame.transform.scale(i, (32, 32))
-            self.__images[image] = i
+            self.images[image] = i
 
     def render_loop(self):
         while self.__running:
@@ -297,12 +272,12 @@ class Renderer:
                                 self.__last_draw_pos = mouse_pos
 
                             if (
-                                    960 < mouse_pos[0] < 1060
-                                    and 100 < mouse_pos[1] < 150
-                                    and self.__skip_current_word.get_at(
-                                (mouse_pos[0] - 960, mouse_pos[1] - 100)
-                            )
-                                    == (*BLUE, 255)
+                                960 < mouse_pos[0] < 1060
+                                and 100 < mouse_pos[1] < 150
+                                and self.__skip_current_word.get_at(
+                                    (mouse_pos[0] - 960, mouse_pos[1] - 100)
+                                )
+                                == (*BLUE, 255)
                             ):
                                 print("gimme my new word boi")
 
@@ -357,9 +332,9 @@ class Renderer:
     def _word_list_renderer_part(self, x, temppyyy, i):
         return self.font.render(
             self.server.chat_log[-1 - i][
-            len(self.server.chat_log[-1 - i])
-            - (x + 1) * temppyyy: len(self.server.chat_log[-1 - i])
-                                  - x * temppyyy
+                len(self.server.chat_log[-1 - i])
+                - (x + 1) * temppyyy : len(self.server.chat_log[-1 - i])
+                - x * temppyyy
             ],
             True,
             (111, 111, 111),
@@ -387,7 +362,7 @@ class Renderer:
                 break
             self.screen.blit(
                 self.font.render(
-                    self.server.chat_log[-1 - i][0: temppyyy - 2],
+                    self.server.chat_log[-1 - i][0 : temppyyy - 2],
                     True,
                     (111, 111, 111),
                 ),
@@ -500,7 +475,7 @@ class Renderer:
         pygame.draw.circle(self.__options_menu, (0, 0, 0, 0), (200, 200), 220, 20)
         pygame.draw.circle(self.__options_menu, (0, 0, 0, 0), (200, 200), 98, 20)
 
-        self.__options_menu.blit(self.__images["add"], (0, 0))
+        self.__options_menu.blit(self.images["add"], (0, 0))
 
     def options_checker(self, mouse_pos):
         location_mouse = (
@@ -584,10 +559,10 @@ class Renderer:
                 question = (item[0] + offset[0], item[1] + offset[1])
 
                 if (
-                        question[0] < 0
-                        or question[0] > 1919
-                        or question[1] < 0
-                        or question[1] > 1079
+                    question[0] < 0
+                    or question[0] > 1919
+                    or question[1] < 0
+                    or question[1] > 1079
                 ):
                     continue
 
@@ -609,7 +584,16 @@ class Renderer:
 
 
 class TextEntryBox:
-    def __init__(self, renderer, vals, default="", col=SLIGHTLY_DARKER_GRAY, on_enter=None, blur=False, button=False):
+    def __init__(
+        self,
+        renderer,
+        vals,
+        default="",
+        col=SLIGHTLY_DARKER_GRAY,
+        on_enter=None,
+        blur=False,
+        button=False,
+    ):
         # Private
         self.__default = default
         self.__current_string: str = default
@@ -628,12 +612,15 @@ class TextEntryBox:
         self.__font: pygame.font.Font = renderer.font
         self.__cursor_surf = pygame.Surface((2, self.__font.get_height() - 4))
         self.has_button = button
+
         if self.has_button:
-            self.__icon = pygame.image.load("images/tick.png")
+            self.__icon = renderer.images["tick"]
             self.__button_surface = pygame.Surface((40, vals[3]))
             self.__button_surface.fill(self.col)
             self.__button_surface.blit(self.__icon, (-5, 5))
-            self.button_rect = pygame.Rect(vals[0]-self.__button_surface.get_width()-10, vals[1], 50, 20)
+            self.button_rect = pygame.Rect(
+                vals[0] - self.__button_surface.get_width() - 10, vals[1], 50, 20
+            )
 
     def text_box_clicked(self):
         # Click response
@@ -658,9 +645,13 @@ class TextEntryBox:
         if event.key in important_keys:
             if self.__current_string != "":
                 if event.key == K_BACKSPACE:
-                    self.__current_string = stringpop(self.__pointer, self.__current_string)
+                    self.__current_string = stringpop(
+                        self.__pointer, self.__current_string
+                    )
                 elif event.key == (K_RETURN or K_KP_ENTER):
-                    print(f" [ \033[35mTextBx\033[0m ] Sending String '{self.__display_string}' to function. ")
+                    print(
+                        f" [ \033[35mTextBx\033[0m ] Sending String '{self.__display_string}' to function. "
+                    )
                     self.__on_enter(self.__current_string)
                     self.reset_strings()
                 elif event.key == K_LEFT:
@@ -669,7 +660,9 @@ class TextEntryBox:
                     self.__pointer += 1
 
         elif len(self.__current_string) <= 32:
-            self.__current_string = stringadd(event.unicode, self.__current_string, self.__pointer)
+            self.__current_string = stringadd(
+                event.unicode, self.__current_string, self.__pointer
+            )
         self.__display_string = self.__current_string
 
     def render(self):
@@ -698,17 +691,26 @@ class TextEntryBox:
             border_radius=4,
         )
         self.__box_surface.blit(rendered_text, (3, 3))
-        self.__box_surface.blit(self.__cursor_surf, (
-            text_rect.right + 2 + ((self.__pointer + 1) * 10), text_rect.bottom - self.renderer.font.get_height() + 5))
+        self.__box_surface.blit(
+            self.__cursor_surf,
+            (
+                text_rect.right + 2 + ((self.__pointer + 1) * 10),
+                text_rect.bottom - self.renderer.font.get_height() + 5,
+            ),
+        )
         if self.has_button:
             self.renderer.screen.blit(self.__button_surface, self.button_rect)
         self.renderer.screen.blit(self.__box_surface, self.rect)
 
 
 if __name__ == "__main__":
+    if settings.default:
+        print("Default settings created, please configure now")
+        sys.exit(0)
+
     # Temporary
-    url, port = "192.168.137.1", SERVER_PORT
-    server = Client((url, port), "Tommy")
+    url, port = settings["ServerAddress"], settings["Port"]
+    server = Client((url, port), settings["Name"])
     server.start()
     server.wait_till_success()
 
@@ -725,11 +727,16 @@ if __name__ == "__main__":
         )
         password_box = TextEntryBox(
             render_me,
-            (1575, 765 + render_me.font.get_height() + 20, 325, render_me.font.get_height() + 10),
+            (
+                1575,
+                765 + render_me.font.get_height() + 20,
+                325,
+                render_me.font.get_height() + 10,
+            ),
             on_enter=server.send_message,
             blur=True,
             default="Password",
-            button=True
+            button=True,
         )
 
         render_me.render_loop()

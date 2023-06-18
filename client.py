@@ -6,7 +6,7 @@ import time
 WELCOME_MESSAGE = "Welcome to the game"
 
 
-class BadConfig(Exception):
+class BadClientConfig(Exception):
     ...
 
 

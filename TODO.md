@@ -20,3 +20,8 @@
 - Title screen with prompts to log into a server
 - Rendering the word (or lack there off) (the client allready gets this send by the server)
 - Game logic modes (?)
+- The server now has request_game_start, needs to be added when in the lobby
+- The server now has request_word_skip, needs to be added when in game
+- The server now has .word_pattern, needs to be rendered when in game
+- The settings now has username, IP and Port, a settings or login page that updates them is needed.
+- The server sends formatted messages _WON and _LOST, these need to be rendered with nice messages.

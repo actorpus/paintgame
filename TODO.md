@@ -7,7 +7,6 @@
 ## ALISTAIR
 1. Alistair needs to remove magic variables that broke font size when swapping font
 2. Fix ur text wrapping, it breaks when you type more than 0.000001 characters, probably ur shitty variable names, cunt, kys.
-3. If you click and dont drag, it should  not draw a dot.
 
 ## TOMMY
 1. END, HOME and DEL should do their thing in text boxes

@@ -113,7 +113,7 @@ class Client(threading.Thread):
         self._running = True
         self._last_ping_time = time.time()
         self._port = port
-        self._name = b"N00B"
+        self._name = "N00B"
 
     def process_packet(self, packet):
         if packet == b"PONG":

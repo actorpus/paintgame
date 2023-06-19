@@ -81,7 +81,8 @@ class Renderer:
         pygame.init()
         pygame.font.init()
         pygame.display.set_caption("Drawing fun paint")
-        self.server = client
+        self.server: Client = client
+        self.server.request_game_start()
         self.screen = pygame.display.set_mode((1920, 1080))
         self.font = pygame.font.FontType("resources/consola.ttf", 18)
         self.__running = True

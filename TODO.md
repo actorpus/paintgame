@@ -11,7 +11,6 @@
 ## TOMMY
 1. END, HOME and DEL should do their thing in text boxes
 2. Input box's have different outline when selected
-3. Learn how to hse markdown, THERE ARE SPACES AFTER A HASHTAG
 4. Please load up add.png and minus.png side by side and just swap between them... youll see it
 
 # Features to add

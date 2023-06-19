@@ -63,6 +63,7 @@ class ServerTimeouts(threading.Thread):
                 self.server.update_all_clients()
                 self.lobby_update_time = t
 
+
 class Server:
     def __init__(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

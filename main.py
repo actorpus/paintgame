@@ -111,7 +111,7 @@ class Renderer:
         )
 
         self.images = {}
-        for image in ["add", "minus", "tick"]:
+        for image in ["add", "minus"]:
             i = pygame.image.load("resources/" + image + ".png")
             i = pygame.transform.scale(i, (32, 32))
             self.images[image] = i
@@ -239,7 +239,6 @@ class Renderer:
                 (1600, 740 - lines_taken * 25),
                 )
                 lines_taken += 1
-        
 
     def drawing(self, position, RGB):
         # [pos before last pos, last pos, current pos]
@@ -485,7 +484,7 @@ class TextEntryBox:
         self.has_button = button
 
         if self.has_button:
-            self.__icon = renderer.images["tick"]
+            self.__icon = pygame.image.load("resources/tick.png")
             self.__button_surface = pygame.Surface((40, vals[3]))
             self.__button_surface.fill(self.col)
             self.__button_surface.blit(self.__icon, (-5, 5))

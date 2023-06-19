@@ -217,48 +217,29 @@ class Renderer:
 
     def render_menu(self):
         ...
-
-    @lru_cache(maxsize=32)
-    def _word_list_renderer_part(self, x, temppyyy, i):
-        return self.font.render(
-            self.server.chat_log[-1 - i][
-                len(self.server.chat_log[-1 - i])
-                - (x + 1) * temppyyy : len(self.server.chat_log[-1 - i])
-                - x * temppyyy
-            ],
-            True,
-            (111, 111, 111),
-        )
-
+        
     def skip_cur_word_renderer(self):
         self.__canvas.blit(self.__skip_current_word, (960, 100))
 
     def _word_list_renderer(self):
-        lines_taken = 0
         pygame.draw.rect(self.screen, (255, 0, 0), (1580, 20, 320, 740), width=1)
-        temppyyy = 30
-        for i in range(len(self.server.chat_log)):
-            tempyyyyyyyy = 0
-            for x in range(len(self.server.chat_log[-1 - i]) // temppyyy):
-                tempyyyyyyyy += 1
+        lines_taken = 0
+        max_lines = 27
+        max_length = 30
+        for i in self.server.chat_log[:-max_lines:-1]:
+            temp_lines_taken = 0
+            broken_message = split_by_max_length(i, max_length)
+            for x in broken_message[::-1]:
                 self.screen.blit(
-                    self._word_list_renderer_part(x, temppyyy, i),
-                    (1600, 740 - lines_taken * 25),
-                )
-                lines_taken += 1
-                if lines_taken >= 29:
-                    break
-            if lines_taken >= 29:
-                break
-            self.screen.blit(
                 self.font.render(
-                    self.server.chat_log[-1 - i][0 : temppyyy - 2],
+                    x,
                     True,
                     (111, 111, 111),
                 ),
                 (1600, 740 - lines_taken * 25),
-            )
-            lines_taken += 1
+                )
+                lines_taken += 1
+        
 
     def drawing(self, position, RGB):
         # [pos before last pos, last pos, current pos]
@@ -282,13 +263,13 @@ class Renderer:
             )
             pygame.draw.circle(
                 self.__canvas,
-                self.__current_RGB,
+                RGB,
                 self.__past_drawing_points[0],
                 self.__pen_size // 2,
             )
             pygame.draw.circle(
                 self.__canvas,
-                self.__current_RGB,
+                RGB,
                 self.__past_drawing_points[1],
                 self.__pen_size // 2,
             )

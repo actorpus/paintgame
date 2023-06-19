@@ -88,7 +88,8 @@ class _Settings:
         file.write(json.dumps({
             "ServerAddress": "0.0.0.0",
             "Port": 16324,
-            "Name": "N00B"
+            "Name": "N00B",
+            "MouseSnap": False,
         }))
         file.close()
 
@@ -109,6 +110,7 @@ class _Settings:
             "ServerAddress": _settings.get("ServerAddress", "0.0.0.0"),
             "Name": _settings.get("Name", "N00B"),
             "Port": _settings.get("Port", 16324),
+            "MouseSnap": _settings.get("MouseSnap", False)
         }
 
     @property

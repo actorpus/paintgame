@@ -78,6 +78,7 @@ class Server:
 
     def send_message_to_all(self, message, except_=None):
         for client in self.clients:
+            print(client, type(client), except_, type(except_))
             if client == except_:
                 pass
 

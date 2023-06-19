@@ -396,9 +396,10 @@ class Renderer:
             else:
                 print("Option 8")
 
-        pygame.mouse.set_pos(
-            (self.__settings_pos[0] + 200, self.__settings_pos[1] + 200)
-        )
+        if settings["MouseSnap"]:
+            pygame.mouse.set_pos(
+                (self.__settings_pos[0] + 200, self.__settings_pos[1] + 200)
+            )
 
     def pen_size_increase(self):
         self.__pen_size += 2

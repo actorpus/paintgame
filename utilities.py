@@ -76,6 +76,12 @@ def interpolate(
     return int((a[0] * i) + (b[0] * (1 - i))), int((a[1] * i) + (b[1] * (1 - i)))
 
 
+
+# def compress_surface(surf: pygame.Surface):
+#     return zlib.compress(bytes(numpy.packbits(pygame.surfarray.array3d(surf))))
+#
+
+
 class _Settings:
     def _create_default(self):
         file = open(self._file, "w")

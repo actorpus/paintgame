@@ -153,14 +153,6 @@ class Renderer:
                             else:
                                 self._reset_states(box)
                         else:
-                            if self.__current_tool == "Drawing":
-                                self.__current_tool_active = True
-                                self.__last_draw_pos = mouse_pos
-
-                            elif self.__current_tool == "Rubber":
-                                self.__current_tool_active = True
-                                self.__last_draw_pos = mouse_pos
-
                             if (
                                 960 < mouse_pos[0] < 1060
                                 and 100 < mouse_pos[1] < 150
@@ -170,6 +162,21 @@ class Renderer:
                                 == (*BLUE, 255)
                             ):
                                 print("gimme my new word boi")
+                                
+                            elif 1700 < mouse_pos[0] < 1800 and 850 < mouse_pos[1] < 900 and self.__skip_current_word.get_at((mouse_pos[0]-1700, mouse_pos[1]-850)) == (*BLUE, 255):
+                                print('Start a new game boy')    
+                                
+                            elif self.__current_tool == "Drawing":
+                                self.__current_tool_active = True
+                                self.__last_draw_pos = mouse_pos
+
+                            elif self.__current_tool == "Rubber":
+                                self.__current_tool_active = True
+                                self.__last_draw_pos = mouse_pos
+
+                            
+                            
+                            
 
                     elif event.button == 3:
                         self.options_menu()
@@ -198,6 +205,7 @@ class Renderer:
 
             self._word_list_renderer()
             self.skip_cur_word_renderer()
+            self.start_new_game_renderer()
             for box in entryboxes:
                 box.render()
             self.timer()
@@ -217,7 +225,10 @@ class Renderer:
 
     def render_menu(self):
         ...
-        
+    
+    def start_new_game_renderer(self):
+        self.__canvas.blit(self.__skip_current_word, (1700, 850))
+       
     def skip_cur_word_renderer(self):
         self.__canvas.blit(self.__skip_current_word, (960, 100))
 

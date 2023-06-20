@@ -5,8 +5,7 @@
 2. Function to take a string and write it to the END (so we can find and remove it if necessary) of the word list
 
 ## ALISTAIR
-1. Alistair needs to remove magic variables that broke font size when swapping font
-2. Fix ur text wrapping, it breaks when you type more than 0.000001 characters, probably ur shitty variable names, cunt, kys.
+
 
 ## TOMMY
 1. END, HOME and DEL should do their thing in text boxes

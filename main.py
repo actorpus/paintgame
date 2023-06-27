@@ -156,10 +156,10 @@ class Renderer:
                                 )
                                 == (*BLUE, 255)
                             ):
-                                print("gimme my new word boi")
+                                self.server.request_word_skip()
                                 
                             elif 1700 < mouse_pos[0] < 1800 and 850 < mouse_pos[1] < 900 and self.__skip_current_word.get_at((mouse_pos[0]-1700, mouse_pos[1]-850)) == (*BLUE, 255):
-                                print('Start a new game boy')    
+                                self.server.request_game_start()
                                 
                             elif self.__current_tool == "Drawing":
                                 self.__current_tool_active = True
@@ -200,7 +200,9 @@ class Renderer:
 
             self._word_list_renderer()
             self.skip_cur_word_renderer()
-            self.start_new_game_renderer()
+            if self.server.word_pattern == 'loading...':
+                self.start_new_game_renderer()
+
             for box in entryboxes:
                 box.render()
             self.timer()
@@ -222,10 +224,10 @@ class Renderer:
         ...
     
     def start_new_game_renderer(self):
-        self.__canvas.blit(self.__skip_current_word, (1700, 850))
+        self.screen.blit(self.__skip_current_word, (1700, 850))
        
     def skip_cur_word_renderer(self):
-        self.__canvas.blit(self.__skip_current_word, (960, 100))
+        self.screen.blit(self.__skip_current_word, (960, 100))
 
     def _word_list_renderer(self):
         pygame.draw.rect(self.screen, (255, 0, 0), (1580, 20, 320, 740), width=1)

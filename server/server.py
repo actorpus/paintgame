@@ -75,6 +75,7 @@ class Server:
         print(" [ \033[32mMS    \033[0m ] Discovered my ip.", self.self_ip)
 
         self.game = Game(self)
+        self.frame = None
 
     def send_message_to_all(self, message, except_=None):
         for client in self.clients:
@@ -132,6 +133,16 @@ class Client(threading.Thread):
 
         elif packet == b"STRT":
             self._server.game.start_game()
+
+        elif packet == b"SKIP":
+            self._server.game.load_random_word()
+
+        elif packet == b"FRME":
+            length = self._socket.recv(2)
+            length = int.from_bytes(length, "big")
+
+            frame = self._socket.recv(length)
+            self._server.frame = frame
 
         else:
             print("WHAT THE FUUUUUUUUUUCK")

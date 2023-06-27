@@ -11,7 +11,7 @@ class BadClientConfig(Exception):
 
 
 class Client(threading.Thread):
-    def __init__(self, address: tuple[str, int], name: str):
+    def __init__(self, address: tuple[str, int], name: str, frame_func = None):
         super(Client, self).__init__()
         self._running = True
         self._operable = False
@@ -19,11 +19,14 @@ class Client(threading.Thread):
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.connect(address)
 
+        self._frame_func = frame_func
         self._name = name
         self._chat = [WELCOME_MESSAGE]
         self._lobby_clients = []
 
         self._word_pattern = None
+        self._time_since_last_frame = time.time()
+        self._frame_sending_signaling = 0
 
     def request_word_skip(self):
         self._socket.send(b"SKIP")
@@ -112,12 +115,35 @@ class Client(threading.Thread):
         data = int.from_bytes(data, "big")
         return data
 
+    def _send_frame(self):
+        self._socket.send(b"FRME")
+
+
+    def _frame_send_check(self):
+        current_time = time.time()
+
+        if self._frame_sending_signaling < current_time:
+            return
+
+        if self._time_since_last_frame + 1 / 24 > current_time:
+            return
+
+        if self._frame_func is None:
+            print(f" [ \033[34mClient\033[0m ] ERROR: Tried to get frame, no function was registered")
+            return
+
+        self._time_since_last_frame = current_time
+        frame = self._frame_func()
+
+        self._socket.send(len(frame).to_bytes(2, "big"))
+        self._socket.send(frame)
+
     def run(self) -> None:
         self.send_initial()
         self._operable = True
 
         while self._running:
-            self._socket.settimeout(0.2)
+            self._socket.settimeout(1/24)
 
             try:
                 data = self._socket.recv(4)
@@ -128,3 +154,5 @@ class Client(threading.Thread):
                 self.process_packet(data)
             finally:
                 self._socket.settimeout(None)
+
+            self._frame_send_check()

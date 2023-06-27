@@ -1,5 +1,0 @@
-**/logs
-*.log
-
-.venv
-.settings.json

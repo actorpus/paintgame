@@ -12,7 +12,7 @@
 2. Input box's have different outline when selected
 4. Please load up add.png and minus.png side by side and just swap between them... youll see it
 
-# Features to add
+# Features to add (Priority)
 
 - Title screen with prompts to log into a server
 - Rendering the word (or lack there off) (the client allready gets this send by the server)
@@ -22,3 +22,6 @@
 - The server now has .word_pattern, needs to be rendered when in game
 - The settings now has username, IP and Port, a settings or login page that updates them is needed.
 - The server sends formatted messages _WON and _LOST, these need to be rendered with nice messages.
+
+# Features to add (Long term)
+- html view of game needs to somewhat look good.

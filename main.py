@@ -1,15 +1,11 @@
-import socket
-import time
 import pygame
 from pygame.locals import *
-from functools import lru_cache
-import threading
 import traceback
-import hashlib
 import sys
 import math
 from utilities import *
 from client import *
+import io
 
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
@@ -82,7 +78,6 @@ class Renderer:
         pygame.font.init()
         pygame.display.set_caption("Drawing fun paint")
         self.server: Client = client
-        self.server.request_game_start()
         self.screen = pygame.display.set_mode((1920, 1080))
         self.font = pygame.font.FontType("resources/consola.ttf", 18)
         self.__running = True
@@ -592,38 +587,35 @@ if __name__ == "__main__":
 
     # Temporary
     url, port = settings["ServerAddress"], settings["Port"]
+
     server = Client((url, port), settings["Name"])
     server.start()
     server.wait_till_success()
 
-    try:
-        # renderer bollocks
-        render_me = Renderer(server)
+    # renderer bollocks
+    render_me = Renderer(server)
 
-        # Other class instantiations
-        guesses = TextEntryBox(
-            render_me,
-            (1575, 765, 325, render_me.font.get_height() + 10),
-            on_enter=server.send_message,
-            default="Guess a word...",
-        )
-        password_box = TextEntryBox(
-            render_me,
-            (
-                1575,
-                765 + render_me.font.get_height() + 20,
-                325,
-                render_me.font.get_height() + 10,
-            ),
-            on_enter=server.send_message,
-            blur=True,
-            default="Password",
-            button=True,
-        )
+    # Other class instantiations
+    guesses = TextEntryBox(
+        render_me,
+        (1575, 765, 325, render_me.font.get_height() + 10),
+        on_enter=server.send_message,
+        default="Guess a word...",
+    )
+    password_box = TextEntryBox(
+        render_me,
+        (
+            1575,
+            765 + render_me.font.get_height() + 20,
+            325,
+            render_me.font.get_height() + 10,
+        ),
+        on_enter=server.send_message,
+        blur=True,
+        default="Password",
+        button=True,
+    )
 
-        render_me.render_loop()
-    except Exception:
-        print("\033[31m", end="")
-        print(traceback.format_exc(), end="\033[0m\n")
+    render_me.render_loop()
 
     server.close()
